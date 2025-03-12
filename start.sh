@@ -9,4 +9,4 @@ echo "Cluster created successfully."
 echo "Deploying manifests with Skaffold..."
 cd Kind; skaffold run; cd ..
 
-echo "Skaffold deployment complete."
+echo "Skaffold deployment completed."
