@@ -1,0 +1,28 @@
+kind: Cluster
+name: test-cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
+nodes:
+- role: control-plane
+  image: kindest/node:v1.29.4
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+  extraPortMappings:
+  - containerPort: 32080
+    hostPort: 80
+  - containerPort: 32443
+    hostPort: 443
+- role: worker
+  image: kindest/node:v1.29.4
+- role: worker
+  image: kindest/node:v1.29.4
+networking:
+  disableDefaultCNI: true
+  podSubnet: 172.16.0.0/16
