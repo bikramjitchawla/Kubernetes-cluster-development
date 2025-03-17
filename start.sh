@@ -10,6 +10,7 @@ echo "ArgoCD namespace created successfully."
 
 cd Kind; skaffold run; cd ..;
 cd calico; skaffold run --filename skaffold-operator.yaml; cd ..;
+sleep 20 # Add a delay to allow the operator to initialize
 cd calico; skaffold run --filename skaffold-resource.yaml; cd ..;
 
 echo "Skaffold deployment completed.";

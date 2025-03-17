@@ -9,4 +9,4 @@ deploy:
   kubectl:
     flags:
       apply:
-        - "--server-side"
+        - --server-side
