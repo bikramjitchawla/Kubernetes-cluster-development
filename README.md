@@ -73,6 +73,4 @@ echo "Skaffold deployment completed.";
 ## Contributions
 Feel free to open issues or submit pull requests to improve this project.
 
-## License
-This project is licensed under the MIT License.
 
