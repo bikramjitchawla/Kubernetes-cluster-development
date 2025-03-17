@@ -4,6 +4,6 @@ metadata:
   name: calico-resources
 manifests:
   rawYaml:
-    - ./calico/custom-resources.yaml
+    - custom-resources.yaml
 deploy:
   kubectl: {}
