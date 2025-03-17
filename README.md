@@ -73,4 +73,7 @@ echo "Skaffold deployment completed.";
 ## Contributions
 Feel free to open issues or submit pull requests to improve this project.
 
+## Argo CD
+Agrdo CD will be integrated in coming days in the project 
+
 
