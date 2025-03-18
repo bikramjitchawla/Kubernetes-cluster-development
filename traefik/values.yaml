@@ -395,7 +395,6 @@ logs:
 
 metrics:
   # -- Enable metrics for internal resources. Default: false
-  addInternals: false
 
   ## Prometheus is enabled by default.
   ## It can be disabled by setting "prometheus: null"
@@ -403,45 +402,45 @@ metrics:
     # -- Entry point used to expose metrics.
     entryPoint: metrics
     # -- Enable metrics on entry points. Default: true
-    addEntryPointsLabels:  # @schema type:[boolean, null]
+#    addEntryPointsLabels:  # @schema type:[boolean, null]
     # -- Enable metrics on routers. Default: false
-    addRoutersLabels:  # @schema type:[boolean, null]
+#    addRoutersLabels:  # @schema type:[boolean, null]
     # -- Enable metrics on services. Default: true
-    addServicesLabels:  # @schema type:[boolean, null]
-    # -- Buckets for latency metrics. Default="0.1,0.3,1.2,5.0"
-    buckets: ""
-    # -- When manualRouting is true, it disables the default internal router in
+#    addServicesLabels:  # @schema type:[boolean, null]
+#    # -- Buckets for latency metrics. Default="0.1,0.3,1.2,5.0"
+#    buckets: ""
+#    # -- When manualRouting is true, it disables the default internal router in
     ## order to allow creating a custom router for prometheus@internal service.
-    manualRouting: false
+#    manualRouting: false
     # -- Add HTTP header labels to metrics. See EXAMPLES.md or upstream doc for usage.
-    headerLabels: {}  # @schema type:[object, null]
-    service:
+#    headerLabels: {}  # @schema type:[object, null]
+#    service:
       # -- Create a dedicated metrics service to use with ServiceMonitor
-      enabled: false
-      labels: {}
-      annotations: {}
+#      enabled: false
+#      labels: {}
+#      annotations: {}
     # -- When set to true, it won't check if Prometheus Operator CRDs are deployed
-    disableAPICheck:  # @schema type:[boolean, null]
-    serviceMonitor:
+#    disableAPICheck:  # @schema type:[boolean, null]
+#    serviceMonitor:
       # -- Enable optional CR for Prometheus Operator. See EXAMPLES.md for more details.
-      enabled: false
-      metricRelabelings: []
-      relabelings: []
-      jobLabel: ""
-      interval: ""
-      honorLabels: false
-      scrapeTimeout: ""
-      honorTimestamps: false
-      enableHttp2: false
-      followRedirects: false
-      additionalLabels: {}
-      namespace: ""
-      namespaceSelector: {}
-    prometheusRule:
+#      enabled: false
+#      metricRelabelings: []
+#      relabelings: []
+#      jobLabel: ""
+#     interval: ""
+#      honorLabels: false
+#      scrapeTimeout: ""
+#      honorTimestamps: false
+#      enableHttp2: false
+#      followRedirects: false
+#      additionalLabels: {}
+#      namespace: ""
+##      namespaceSelector: {}
+ #   prometheusRule:
       # -- Enable optional CR for Prometheus Operator. See EXAMPLES.md for more details.
-      enabled: false
-      additionalLabels: {}
-      namespace: ""
+#      enabled: false
+#      additionalLabels: {}
+#      namespace: ""
 
   #  datadog:
   #    ## Address instructs exporter to send metrics to datadog-agent at this address.
@@ -629,8 +628,7 @@ ports:
     # -- You SHOULD NOT expose the traefik port on production deployments.
     # If you want to access it from outside your cluster,
     # use `kubectl port-forward` or create a secure ingress
-    expose:
-      default: false
+    expose: false
     # -- The exposed port for this service
     exposedPort: 8080
     # -- The port protocol (TCP/UDP)
@@ -641,8 +639,7 @@ ports:
     port: 8000
     # hostPort: 8000
     # containerPort: 8000
-    expose:
-      default: true
+    expose: true
     exposedPort: 80
     ## -- Different target traefik port on the cluster, useful for IP type LB
     targetPort:  # @schema type:[string, integer, null]; minimum:0
@@ -682,8 +679,7 @@ ports:
     port: 8443
     hostPort:  # @schema type:[integer, null]; minimum:0
     containerPort:  # @schema type:[integer, null]; minimum:0
-    expose:
-      default: true
+    expose: true
     exposedPort: 443
     ## -- Different target traefik port on the cluster, useful for IP type LB
     targetPort:  # @schema type:[string, integer, null]; minimum:0
@@ -744,8 +740,7 @@ ports:
     # -- You may not want to expose the metrics port on production deployments.
     # If you want to access it from outside your cluster,
     # use `kubectl port-forward` or create a secure ingress
-    expose:
-      default: false
+    expose: false
     # -- The exposed port for this service
     exposedPort: 9100
     # -- The port protocol (TCP/UDP)
