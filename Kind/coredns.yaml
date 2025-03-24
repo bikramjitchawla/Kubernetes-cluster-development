@@ -10,6 +10,11 @@ data:
         health {
           lameduck 5s
         }
+
+        rewrite stop {
+          name regex (.*)\.cluster\.local {1}.svc.cluster.local
+          answer name regex (.*)\.svc\.cluster\.local {1}.cluster.local
+        }
         ready
         kubernetes cluster.local in-addr.arpa ip6.arpa {
           pods insecure
