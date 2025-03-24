@@ -613,14 +613,14 @@ envFrom: []
 
 ports:
   traefik:
-    port: 8080
+    port: 9000
     # -- Use hostPort if set.
-    hostPort:  # @schema type:[integer, null]; minimum:0
+    #hostPort:  # @schema type:[integer, null]; minimum:0
     # -- Use hostIP if set. If not set, Kubernetes will default to 0.0.0.0, which
     # means it's listening on all your interfaces and all your IPs. You may want
     # to set this value if you need traefik to listen on specific interface
     # only.
-    hostIP:  # @schema type:[string, null]
+    #hostIP:  # @schema type:[string, null]
 
     # Defines whether the port is exposed if service.type is LoadBalancer or
     # NodePort.
@@ -630,7 +630,7 @@ ports:
     # use `kubectl port-forward` or create a secure ingress
     expose: false
     # -- The exposed port for this service
-    exposedPort: 8080
+    exposedPort: 9000
     # -- The port protocol (TCP/UDP)
     protocol: TCP
   web:
@@ -759,7 +759,7 @@ service:
   ## -- Single service is using `MixedProtocolLBService` feature gate.
   ## -- When set to false, it will create two Service, one for TCP and one for UDP.
   single: true
-  type: LoadBalancer
+  type: NodePort
   # -- Additional annotations applied to both TCP and UDP services (e.g. for cloud provider specific config)
   annotations: {}
   # -- Additional annotations for TCP service only
