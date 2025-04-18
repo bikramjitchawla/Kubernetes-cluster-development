@@ -8,20 +8,28 @@ data:
     .:53 {
         errors
         health {
-          lameduck 5s
+            lameduck 5s
         }
-        rewrite stop {
-          name regex (.*).localhost.test tarefik.deafult.svc.cluster.local
-          answer auto
-        }  
+
+        # Rewrite argocd.localhost.test to the argocd service
+        rewrite name exact argocd.localhost.test argocd-server.argocd.svc.cluster.local
+
+        # Rewrite *.localhost.test to traefik service
+        rewrite name regex (.*)\.localhost\.test traefik.default.svc.cluster.local
+
         ready
+
         kubernetes cluster.local in-addr.arpa ip6.arpa {
-          pods insecure
-          fallthrough in-addr.arpa ip6.arpa
-          ttl 30
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
         }
+
         prometheus :9153
-        forward . /etc/resolv.conf
+        forward . /etc/resolv.conf {
+            max_concurrent 1000
+        }
+
         cache 30
         loop
         reload
