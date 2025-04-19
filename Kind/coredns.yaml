@@ -11,11 +11,11 @@ data:
             lameduck 5s
         }
 
-        # Rewrite argocd.localhost.test to the argocd service
-        rewrite name exact argocd.localhost.test argocd-server.argocd.svc.cluster.local
+        # Rewrite argocd.localhost to the argocd service
+        rewrite name exact argocd.localhost argocd-server.argocd.svc.cluster.local
 
-        # Rewrite *.localhost.test to traefik service
-        rewrite name regex (.*)\.localhost\.test traefik.default.svc.cluster.local
+        # Rewrite *.localhost to traefik service
+        rewrite name regex (.*)\.localhost traefik.default.svc.cluster.local
 
         ready
 
