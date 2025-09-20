@@ -10,13 +10,6 @@ data:
         health {
             lameduck 5s
         }
-
-        # Rewrite argocd.localhost to the argocd service
-        rewrite name exact argocd.localhost argocd-server.argocd.svc.cluster.local
-
-        # Rewrite *.localhost to traefik service
-        rewrite name regex (.*)\.localhost traefik.default.svc.cluster.local
-
         ready
 
         kubernetes cluster.local in-addr.arpa ip6.arpa {
@@ -26,10 +19,7 @@ data:
         }
 
         prometheus :9153
-        forward . /etc/resolv.conf {
-            max_concurrent 1000
-        }
-
+        forward . /etc/resolv.conf
         cache 30
         loop
         reload
