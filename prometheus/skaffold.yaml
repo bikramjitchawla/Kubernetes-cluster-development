@@ -1,0 +1,20 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: prometheus
+deploy:
+  helm:
+    releases:
+      - name: prometheus
+        repo: https://prometheus-community.github.io/helm-charts
+        remoteChart: prometheus
+        version: 27.42.2
+        valuesFiles:
+          - values.yaml
+        createNamespace: true
+        namespace: monitoring
+        setValues:
+          alertmanager.enabled: true
+          kube-state-metrics.enabled: true
+          prometheus-node-exporter.enabled: true
+          prometheus-pushgateway.enabled: true
