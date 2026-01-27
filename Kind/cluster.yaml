@@ -7,7 +7,7 @@ containerdConfigPatches:
       config_path = "/etc/containerd/certs.d"
 nodes:
   - role: control-plane
-    image: kindest/node:v1.29.4
+    image: kindest/node:v1.34.0
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -21,9 +21,9 @@ nodes:
         hostPort: 443
 
   - role: worker
-    image: kindest/node:v1.29.4
+    image: kindest/node:v1.34.0
   - role: worker
-    image: kindest/node:v1.29.4
+    image: kindest/node:v1.34.0
 networking:
   podSubnet: 172.16.0.0/16
   disableDefaultCNI: true  # Required to disable Kind’s built-in CNI so we can install Calico

@@ -58,6 +58,20 @@ echo "Installing MetalLB..."
 echo "Configuring MetalLB address pool..."
 kubectl apply -f metallb/address-pool.yaml
 
+echo "Installing cert-manager..."
+(
+  cd cert-manager
+  skaffold run
+)
+
+echo "Waiting for cert-manager to become Ready..."
+kubectl rollout status -n cert-manager deployment/cert-manager --timeout=5m
+kubectl rollout status -n cert-manager deployment/cert-manager-webhook --timeout=5m
+kubectl rollout status -n cert-manager deployment/cert-manager-cainjector --timeout=5m
+
+echo "Configuring cert-manager ClusterIssuer (self-signed)..."
+kubectl apply -f cert-manager/cluster-issuer.yaml
+
 echo "Deploying Traefik (after Calico is ready)..."
 (
   cd traefik

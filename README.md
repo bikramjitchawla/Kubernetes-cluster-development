@@ -83,15 +83,31 @@ This repo uses MetalLB to provide a real `LoadBalancer` IP on bare-metal. Traefi
    ```bash
    kubectl get svc -n traefik
    ```
-3. Create a DNS A record:
-   - `app.batman.com` → `<traefik-external-ip>`
-   - Wildcard option: `*.batman.com` → `<traefik-external-ip>` (all subdomains hit Traefik)
+3. Use a dev wildcard domain (no DNS provider needed):
+   - `app.127.0.0.1.nip.io` → resolves to `127.0.0.1` automatically
 4. Test:
    ```bash
-   curl http://app.batman.com
+   curl http://app.127.0.0.1.nip.io
    ```
 
 If you want a different hostname, update `manifests/example-ingress.yaml`.
+
+## HTTPS (self-signed, local dev)
+This repo installs cert-manager and a self-signed ClusterIssuer for local HTTPS.
+
+### Example HTTPS access
+1. Apply the example ingress (includes TLS):
+   ```bash
+   kubectl apply -f manifests/example-ingress.yaml
+   ```
+2. Wait for the certificate to be Ready:
+   ```bash
+   kubectl get certificate
+   ```
+3. Test (self-signed, use -k):
+   ```bash
+   curl -k https://app.127.0.0.1.nip.io
+   ```
 
 ## Contributions
 Feel free to open issues or submit pull requests to improve this project.

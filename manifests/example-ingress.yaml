@@ -5,9 +5,14 @@ metadata:
   namespace: default
   annotations:
     kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: selfsigned
 spec:
+  tls:
+    - hosts:
+        - app.127.0.0.1.nip.io
+      secretName: example-app-tls
   rules:
-    - host: app.batman.com
+    - host: app.127.0.0.1.nip.io
       http:
         paths:
           - path: /
