@@ -70,10 +70,31 @@ cd traefik; skaffold run; cd ..;
 echo "Skaffold deployment completed.";
 ```
 
+## Bare-Metal Exposure (Manual DNS)
+This repo uses MetalLB to provide a real `LoadBalancer` IP on bare-metal. Traefik is configured as a `LoadBalancer`, so you can map a real DNS name to Traefik and route traffic via Ingress.
+
+### Example setup (manual DNS)
+1. Deploy the example app and ingress:
+   ```bash
+   kubectl apply -f manifests/example-app.yaml
+   kubectl apply -f manifests/example-ingress.yaml
+   ```
+2. Get the MetalLB IP for Traefik:
+   ```bash
+   kubectl get svc -n traefik
+   ```
+3. Create a DNS A record:
+   - `app.batman.com` → `<traefik-external-ip>`
+   - Wildcard option: `*.batman.com` → `<traefik-external-ip>` (all subdomains hit Traefik)
+4. Test:
+   ```bash
+   curl http://app.batman.com
+   ```
+
+If you want a different hostname, update `manifests/example-ingress.yaml`.
+
 ## Contributions
 Feel free to open issues or submit pull requests to improve this project.
 
 ## Argo CD
 Agrdo CD will be integrated in coming days in the project 
-
-
