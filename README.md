@@ -109,6 +109,28 @@ This repo installs cert-manager and a self-signed ClusterIssuer for local HTTPS.
    curl -k https://app.127.0.0.1.nip.io
    ```
 
+## Multi-tenant DNS/LB patterns
+### Single cluster, multiple namespaces (shared Traefik)
+- One Traefik `LoadBalancer` service → one MetalLB IP.
+- Every tenant hostname points to the same IP.
+- Traefik routes by hostname/path to the correct namespace/service.
+
+Example:
+- `app.team1.example.com` → `<traefik-external-ip>`
+- `app.team2.example.com` → `<traefik-external-ip>`
+
+### Multiple clusters (per-tenant clusters)
+- Each cluster has its own Traefik + MetalLB IP.
+- Each tenant domain points to its cluster’s unique IP.
+
+Example:
+- `app.team1.example.com` → `<cluster1-traefik-ip>`
+- `app.team2.example.com` → `<cluster2-traefik-ip>`
+
+### Management cluster fronting tenant clusters
+- If Traefik only runs in the management cluster, it can only route to endpoints it can reach.
+- To front other clusters, you need cross-cluster networking, a service mesh, or external endpoints.
+
 ## Contributions
 Feel free to open issues or submit pull requests to improve this project.
 
