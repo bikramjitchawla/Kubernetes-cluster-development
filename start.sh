@@ -49,6 +49,15 @@ if [ "$pods" -eq 0 ]; then
   exit 1
 fi
 
+echo "Installing MetalLB..."
+(
+  cd metallb
+  skaffold run
+)
+
+echo "Configuring MetalLB address pool..."
+kubectl apply -f metallb/address-pool.yaml
+
 echo "Deploying Traefik (after Calico is ready)..."
 (
   cd traefik
