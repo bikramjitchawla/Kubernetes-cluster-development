@@ -32,6 +32,9 @@ To remove the cluster, run:
 ./delete.sh
 ```
 
+### Note on Kind port mappings
+Changes to `Kind/cluster.yaml` (like `extraPortMappings`) only take effect after recreating the Kind cluster. Run `./delete.sh` and then `./start.sh` to apply new mappings.
+
 ## Cluster Configuration
 The cluster consists of:
 - **Calico**: For networking and policy enforcement.

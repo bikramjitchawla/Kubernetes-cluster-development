@@ -19,6 +19,8 @@ nodes:
         hostPort: 80
       - containerPort: 32443 
         hostPort: 443
+      - containerPort: 30432
+        hostPort: 5432
 
   - role: worker
     image: kindest/node:v1.34.0
