@@ -92,6 +92,10 @@ This repo uses MetalLB to provide a real `LoadBalancer` IP on bare-metal. Traefi
 
 If you want a different hostname, update `manifests/example-ingress.yaml`.
 
+### macOS note (why MetalLB IP may hang)
+MetalLB assigns an IP that exists only inside Docker’s network, not on the macOS host. DNS can be correct and requests still hang because the host cannot route to that IP. Accessing services via `localhost` (port‑forward or port mapping) works because localhost is reachable from the host.
+In short: the issue is reachability to the Docker network IP, not DNS.
+
 ## HTTPS (self-signed, local dev)
 This repo installs cert-manager and a self-signed ClusterIssuer for local HTTPS.
 
