@@ -50,6 +50,25 @@ The cluster consists of:
     local-registry: |
       host: "localhost:5001"
   ```
+- **Rook Ceph**: Distributed storage (local dev config).
+
+## Storage (Rook Ceph)
+Rook Ceph is installed for local, ephemeral storage. A `rook-ceph-block` StorageClass is created for PVCs.
+
+Example PVC:
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: rook-ceph-block
+```
 
 ## Deployment Details
 The `start.sh` script executes the following steps:

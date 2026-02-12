@@ -72,6 +72,18 @@ kubectl rollout status -n cert-manager deployment/cert-manager-cainjector --time
 echo "Configuring cert-manager ClusterIssuer (self-signed)..."
 kubectl apply -f cert-manager/cluster-issuer.yaml
 
+echo "Installing Rook Ceph..."
+(
+  cd rook-ceph
+  skaffold run
+)
+
+echo "Waiting for Rook Ceph operator to become Ready..."
+kubectl rollout status -n rook-ceph deployment/rook-ceph-operator --timeout=5m
+
+echo "Waiting for Ceph cluster to become Ready..."
+kubectl wait -n rook-ceph cephcluster/rook-ceph --for=condition=Ready --timeout=15m
+
 echo "Deploying Traefik (after Calico is ready)..."
 (
   cd traefik
