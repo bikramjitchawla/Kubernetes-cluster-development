@@ -32,6 +32,12 @@ To remove the cluster, run:
 ./delete.sh
 ```
 
+To uninstall only Rook Ceph (without deleting the whole Kind cluster), run:
+```bash
+cd rook-ceph
+./uninstall.sh
+```
+
 ### Note on Kind port mappings
 Changes to `Kind/cluster.yaml` (like `extraPortMappings`) only take effect after recreating the Kind cluster. Run `./delete.sh` and then `./start.sh` to apply new mappings.
 

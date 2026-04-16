@@ -4,3 +4,12 @@ dashboard:
 
 webhook:
   enable: true
+
+config:
+  checks:
+    runAsPrivileged: danger
+    privilegeEscalationAllowed: danger
+    hostNetworkSet: danger
+    tagNotSpecified: danger
+    cpuRequestsMissing: warning
+    memoryRequestsMissing: warning
