@@ -38,6 +38,20 @@ cd rook-ceph
 ./uninstall.sh
 ```
 
+### Create Tenant Namespaces (Platform + Tenants)
+To create a platform namespace and two tenant namespaces with quotas/limits plus demo apps, run:
+```bash
+./tenants.sh
+```
+
+This creates:
+- `platform-system` namespace (platform scope)
+- `tenant-a` and `tenant-b` namespaces (tenant scope)
+- ResourceQuota and LimitRange in each tenant namespace
+- Example apps and Ingress routes:
+  - `https://app.tenant-a.127.0.0.1.nip.io`
+  - `https://app.tenant-b.127.0.0.1.nip.io`
+
 ### Note on Kind port mappings
 Changes to `Kind/cluster.yaml` (like `extraPortMappings`) only take effect after recreating the Kind cluster. Run `./delete.sh` and then `./start.sh` to apply new mappings.
 
@@ -170,6 +184,33 @@ Example:
 Example:
 - `app.team1.example.com` → `<cluster1-traefik-ip>`
 - `app.team2.example.com` → `<cluster2-traefik-ip>`
+
+## True Multi-Cluster Tenant Architecture (Kind)
+This repo includes automation to run one platform cluster and two tenant clusters locally.
+
+### Create all clusters
+```bash
+./multi-cluster/create.sh
+```
+
+This creates:
+- `platform-cluster` (`kubectl` context: `kind-platform-cluster`)
+- `tenant-a-cluster` (`kubectl` context: `kind-tenant-a-cluster`)
+- `tenant-b-cluster` (`kubectl` context: `kind-tenant-b-cluster`)
+
+It also creates baseline namespaces:
+- `platform-system` in the platform cluster
+- `tenant-workloads` in each tenant cluster
+
+### Check status
+```bash
+./multi-cluster/status.sh
+```
+
+### Delete all clusters
+```bash
+./multi-cluster/delete.sh
+```
 
 ### Management cluster fronting tenant clusters
 - If Traefik only runs in the management cluster, it can only route to endpoints it can reach.

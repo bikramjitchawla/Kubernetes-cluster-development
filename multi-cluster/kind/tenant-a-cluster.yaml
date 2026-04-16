@@ -1,0 +1,19 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: tenant-a-cluster
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.34.0
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 32080
+        hostPort: 8081
+      - containerPort: 32443
+        hostPort: 8444
+  - role: worker
+    image: kindest/node:v1.34.0

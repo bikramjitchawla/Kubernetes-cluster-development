@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenant-a-app
+  namespace: tenant-a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tenant-a-app
+  template:
+    metadata:
+      labels:
+        app: tenant-a-app
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant-a-app
+  namespace: tenant-a
+spec:
+  selector:
+    app: tenant-a-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tenant-a-app
+  namespace: tenant-a
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: selfsigned
+spec:
+  tls:
+    - hosts:
+        - app.tenant-a.127.0.0.1.nip.io
+      secretName: tenant-a-app-tls
+  rules:
+    - host: app.tenant-a.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tenant-a-app
+                port:
+                  number: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenant-b-app
+  namespace: tenant-b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tenant-b-app
+  template:
+    metadata:
+      labels:
+        app: tenant-b-app
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant-b-app
+  namespace: tenant-b
+spec:
+  selector:
+    app: tenant-b-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tenant-b-app
+  namespace: tenant-b
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: selfsigned
+spec:
+  tls:
+    - hosts:
+        - app.tenant-b.127.0.0.1.nip.io
+      secretName: tenant-b-app-tls
+  rules:
+    - host: app.tenant-b.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tenant-b-app
+                port:
+                  number: 80
