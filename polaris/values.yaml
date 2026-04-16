@@ -1,0 +1,6 @@
+# Minimal local-dev values for Polaris.
+dashboard:
+  enable: true
+
+webhook:
+  enable: true

@@ -1,0 +1,14 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: polaris
+deploy:
+  helm:
+    releases:
+      - name: polaris
+        repo: https://charts.fairwinds.com/stable
+        remoteChart: polaris
+        valuesFiles:
+          - values.yaml
+        createNamespace: true
+        namespace: polaris

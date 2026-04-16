@@ -1,10 +1,10 @@
 # Local Kind Cluster Project
 
-This project provides an easy way to set up a local Kubernetes cluster using Kind (Kubernetes in Docker). The setup includes Calico, Traefik, ArgoCD, and a local container registry. Deployment of resources is managed with Skaffold.
+This project provides an easy way to set up a local Kubernetes cluster using Kind (Kubernetes in Docker). The setup includes Calico, Traefik, Polaris, and a local container registry. Deployment of resources is managed with Skaffold.
 
 ## Features
 - Automated Kind cluster creation
-- Deploys ArgoCD, Calico, and Traefik
+- Deploys Calico, Traefik, and Polaris
 - Includes a local container registry
 - Uses Skaffold for deployment automation
 
@@ -23,7 +23,7 @@ To create and deploy the Kind cluster, simply run:
 ```
 This will:
 1. Create a Kind cluster based on `Kind/cluster.yaml`.
-2. Deploy ArgoCD, Calico, and Traefik using Skaffold.
+2. Deploy Calico, Traefik, and Polaris using Skaffold.
 3. Set up a local container registry.
 
 ### Delete the Cluster
@@ -39,7 +39,6 @@ Changes to `Kind/cluster.yaml` (like `extraPortMappings`) only take effect after
 The cluster consists of:
 - **Calico**: For networking and policy enforcement.
 - **Traefik**: As an ingress controller.
-- **ArgoCD**: For GitOps-style application deployments.
 - **Local Container Registry**:
   ```yaml
   kind: ConfigMap
@@ -51,6 +50,7 @@ The cluster consists of:
       host: "localhost:5001"
   ```
 - **Rook Ceph**: Distributed storage (local dev config).
+- **Polaris**: Kubernetes best-practices dashboard and policy checks.
 
 ## Storage (Rook Ceph)
 Rook Ceph is installed for local, ephemeral storage. A `rook-ceph-block` StorageClass is created for PVCs.
@@ -80,16 +80,28 @@ echo "Cluster created successfully."
 
 echo "Deploying manifests with Skaffold..."
 
-kubectl create namespace argocd || true
-
 cd Kind; skaffold run; cd ..;
 cd calico; skaffold run --filename skaffold-operator.yaml; cd ..;
 sleep 20
 cd calico; skaffold run --filename skaffold-resource.yaml; cd ..;
 
 cd traefik; skaffold run; cd ..;
+cd polaris; skaffold run; cd ..;
 
 echo "Skaffold deployment completed.";
+```
+
+## Polaris Dashboard
+Polaris is installed in the `polaris` namespace.
+
+To access the dashboard locally:
+```bash
+kubectl -n polaris port-forward svc/polaris-dashboard 8080:80
+```
+
+Then open:
+```text
+http://localhost:8080
 ```
 
 ## Bare-Metal Exposure (Manual DNS)

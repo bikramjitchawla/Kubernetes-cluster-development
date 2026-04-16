@@ -90,4 +90,10 @@ echo "Deploying Traefik (after Calico is ready)..."
   skaffold run
 )
 
+echo "Installing Polaris..."
+(
+  cd polaris
+  skaffold run
+)
+
 echo "Skaffold deployment completed successfully."
