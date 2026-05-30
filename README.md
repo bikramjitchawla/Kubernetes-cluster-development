@@ -51,7 +51,7 @@ flowchart TB
 | Calico | CNI and network policy support | Yes |
 | MetalLB | `LoadBalancer` IP allocation for local bare-metal style testing | Yes |
 | cert-manager | Local certificate automation with a self-signed `ClusterIssuer` | Yes |
-| Rook Ceph | Ephemeral local block storage via `rook-ceph-block` | Yes |
+| Rook Ceph | Ephemeral local CephFS storage via `rook-ceph-filesystem` | Yes |
 | Traefik | Ingress controller | Yes |
 | Polaris | Kubernetes configuration dashboard | Yes |
 | Tenant manifests | Namespace, quota, and demo app workflow | Optional |
@@ -93,7 +93,7 @@ The script performs the following high-level sequence:
 3. Installs Calico and waits for Calico pods to become ready.
 4. Installs MetalLB and applies `metallb/address-pool.yaml`.
 5. Installs cert-manager and applies the self-signed `ClusterIssuer`.
-6. Installs Rook Ceph in CRD-safe order, then creates the Ceph cluster and block pool.
+6. Installs Rook Ceph in CRD-safe order, then creates the Ceph cluster, CephFS filesystem, and StorageClass.
 7. Installs Traefik and Polaris.
 
 Check the cluster:
@@ -116,7 +116,9 @@ Remove the local Kind cluster:
 
 ## Rook Ceph Storage
 
-Rook Ceph is configured for local, ephemeral development storage. It creates the `rook-ceph-block` `StorageClass`.
+Rook Ceph is configured for local, ephemeral development storage. It creates the `rook-ceph-filesystem` `StorageClass`.
+
+This repo uses CephFS by default because Docker Desktop's LinuxKit kernel does not include the `rbd` kernel module required by the RBD CSI node plugin. The CephFS CSI driver runs with the fuse client for better local compatibility.
 
 Example PVC:
 
@@ -131,7 +133,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: rook-ceph-block
+  storageClassName: rook-ceph-filesystem
 ```
 
 Uninstall only Rook Ceph without deleting the whole Kind cluster:
@@ -221,7 +223,7 @@ This setup creates baseline namespaces only. To route traffic from a management 
 | `calico/` | Calico operator and custom resources |
 | `metallb/` | MetalLB installation and local address pool |
 | `cert-manager/` | cert-manager install and self-signed issuer |
-| `rook-ceph/` | Rook Ceph CRDs, operator, cluster, block pool, and uninstall script |
+| `rook-ceph/` | Rook Ceph CRDs, operator, cluster, CephFS StorageClass, and uninstall script |
 | `traefik/` | Traefik Skaffold config and Helm values |
 | `polaris/` | Polaris Skaffold config and Helm values |
 | `prometheus/` | Prometheus add-on manifests |
@@ -243,6 +245,21 @@ ensure CRDs are installed first
 ```
 
 the cluster has Rook custom-resource manifests being evaluated after the Rook CRDs were removed. Use the current `delete.sh` or `rook-ceph/uninstall.sh`; both scripts check for CRDs before deleting Rook custom resources.
+
+### RBD CSI plugin crashes on Docker Desktop
+
+If `csi-rbdplugin` fails with:
+
+```text
+modprobe: FATAL: Module rbd not found in directory /lib/modules/...-linuxkit
+```
+
+the host kernel does not provide the RBD module. The default manifests disable RBD CSI and use CephFS instead. Recreate the cluster after pulling these changes:
+
+```bash
+./delete.sh
+./start.sh
+```
 
 ### Calico pods never become ready
 

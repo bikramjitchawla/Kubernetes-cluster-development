@@ -76,7 +76,7 @@ echo "Installing Rook Ceph..."
 kubectl apply -f rook-ceph/crds.yaml
 kubectl wait --for=condition=Established \
   crd/cephclusters.ceph.rook.io \
-  crd/cephblockpools.ceph.rook.io \
+  crd/cephfilesystems.ceph.rook.io \
   --timeout=2m
 kubectl apply -f rook-ceph/common.yaml
 kubectl apply -f rook-ceph/operator.yaml
@@ -90,8 +90,9 @@ kubectl apply -f rook-ceph/cluster.yaml
 echo "Waiting for Ceph cluster to become Ready..."
 kubectl wait -n rook-ceph cephcluster/rook-ceph --for=condition=Ready --timeout=15m
 
-echo "Creating Rook Ceph block pool and StorageClass..."
-kubectl apply -f rook-ceph/pool-storageclass.yaml
+echo "Creating Rook Ceph filesystem and StorageClass..."
+kubectl apply -f rook-ceph/filesystem-storageclass.yaml
+kubectl wait -n rook-ceph cephfilesystem/rook-ceph-fs --for=condition=Ready --timeout=10m
 
 echo "Deploying Traefik (after Calico is ready)..."
 (

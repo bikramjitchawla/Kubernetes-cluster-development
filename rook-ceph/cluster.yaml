@@ -18,3 +18,5 @@ spec:
   storage:
     useAllNodes: true
     useAllDevices: false
+    directories:
+      - path: /var/lib/rook-osd

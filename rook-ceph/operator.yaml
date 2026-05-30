@@ -31,8 +31,9 @@ data:
   # Enable the CSI driver.
   # To run the non-default version of the CSI driver, see the override-able image properties in operator.yaml
   ROOK_CSI_ENABLE_CEPHFS: "true"
-  # Enable the default version of the CSI RBD driver. To start another version of the CSI driver, see image properties below.
-  ROOK_CSI_ENABLE_RBD: "true"
+  # Docker Desktop's LinuxKit kernel does not include the rbd module required by
+  # the RBD node plugin. Use CephFS for this local Kind cluster.
+  ROOK_CSI_ENABLE_RBD: "false"
   # Enable the CSI NFS driver. To start another version of the CSI driver, see image properties below.
   ROOK_CSI_ENABLE_NFS: "false"
   # Disable the CSI driver.
@@ -90,7 +91,7 @@ data:
   CSI_ENABLE_NFS_SNAPSHOTTER: "true"
 
   # set to false to disable deployment of snapshotter container in RBD provisioner pod.
-  CSI_ENABLE_RBD_SNAPSHOTTER: "true"
+  CSI_ENABLE_RBD_SNAPSHOTTER: "false"
 
   # set to false to disable volume group snapshot feature. This feature is
   # enabled by default as long as the necessary CRDs are available in the cluster.
@@ -99,7 +100,7 @@ data:
   # If you disable the kernel client, your application may be disrupted during upgrade.
   # See the upgrade guide: https://rook.io/docs/rook/latest/ceph-upgrade.html
   # NOTE! cephfs quota is not supported in kernel version < 4.17
-  CSI_FORCE_CEPHFS_KERNEL_CLIENT: "true"
+  CSI_FORCE_CEPHFS_KERNEL_CLIENT: "false"
 
   # (Optional) policy for modifying a volume's ownership or permissions when the RBD PVC is being mounted.
   # supported values are documented at https://kubernetes-csi.github.io/docs/support-fsgroup.html
