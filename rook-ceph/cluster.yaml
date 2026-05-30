@@ -16,7 +16,19 @@ spec:
   dashboard:
     enabled: true
   storage:
-    useAllNodes: true
+    useAllNodes: false
     useAllDevices: false
-    directories:
-      - path: /var/lib/rook-osd
+    storageClassDeviceSets:
+      - name: local
+        count: 2
+        portable: false
+        volumeClaimTemplates:
+          - metadata:
+              name: data
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              storageClassName: standard
+              resources:
+                requests:
+                  storage: 10Gi
