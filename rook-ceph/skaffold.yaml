@@ -7,7 +7,5 @@ manifests:
     - crds.yaml
     - common.yaml
     - operator.yaml
-    - cluster.yaml
-    - pool-storageclass.yaml
 deploy:
   kubectl: {}

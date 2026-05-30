@@ -14,12 +14,14 @@ fi
 echo "Attempting best-effort Rook Ceph cleanup on context '$KUBE_CONTEXT'..."
 if kubectl --context "$KUBE_CONTEXT" get ns rook-ceph >/dev/null 2>&1; then
   if kubectl --context "$KUBE_CONTEXT" get crd cephclusters.ceph.rook.io >/dev/null 2>&1; then
-    kubectl --context "$KUBE_CONTEXT" delete -f "${REPO_ROOT}/rook-ceph/cluster.yaml" --ignore-not-found=true || true
-    kubectl --context "$KUBE_CONTEXT" delete -f "${REPO_ROOT}/rook-ceph/pool-storageclass.yaml" --ignore-not-found=true || true
+    kubectl --context "$KUBE_CONTEXT" -n rook-ceph delete cephcluster rook-ceph --ignore-not-found=true || true
   else
     echo "Rook Ceph CRDs already missing; skipping Ceph CR deletion."
-    kubectl --context "$KUBE_CONTEXT" delete storageclass rook-ceph-block --ignore-not-found=true || true
   fi
+  if kubectl --context "$KUBE_CONTEXT" get crd cephblockpools.ceph.rook.io >/dev/null 2>&1; then
+    kubectl --context "$KUBE_CONTEXT" -n rook-ceph delete cephblockpool rook-ceph-block --ignore-not-found=true || true
+  fi
+  kubectl --context "$KUBE_CONTEXT" delete storageclass rook-ceph-block --ignore-not-found=true || true
 
   kubectl --context "$KUBE_CONTEXT" delete -f "${REPO_ROOT}/rook-ceph/operator.yaml" --ignore-not-found=true || true
   kubectl --context "$KUBE_CONTEXT" delete -f "${REPO_ROOT}/rook-ceph/common.yaml" --ignore-not-found=true || true

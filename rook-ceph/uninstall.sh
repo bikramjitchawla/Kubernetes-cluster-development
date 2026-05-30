@@ -3,12 +3,14 @@ set -euo pipefail
 
 echo "Uninstalling Rook Ceph custom resources (if CRDs exist)..."
 if kubectl get crd cephclusters.ceph.rook.io >/dev/null 2>&1; then
-  kubectl delete -f cluster.yaml --ignore-not-found=true || true
-  kubectl delete -f pool-storageclass.yaml --ignore-not-found=true || true
+  kubectl -n rook-ceph delete cephcluster rook-ceph --ignore-not-found=true || true
 else
   echo "Ceph CRDs are already missing; skipping CephCluster/CephBlockPool delete."
-  kubectl delete storageclass rook-ceph-block --ignore-not-found=true || true
 fi
+if kubectl get crd cephblockpools.ceph.rook.io >/dev/null 2>&1; then
+  kubectl -n rook-ceph delete cephblockpool rook-ceph-block --ignore-not-found=true || true
+fi
+kubectl delete storageclass rook-ceph-block --ignore-not-found=true || true
 
 echo "Uninstalling Rook Ceph operator/common resources..."
 kubectl delete -f operator.yaml --ignore-not-found=true || true

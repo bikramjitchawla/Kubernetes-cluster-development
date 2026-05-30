@@ -73,16 +73,25 @@ echo "Configuring cert-manager ClusterIssuer (self-signed)..."
 kubectl apply -f cert-manager/cluster-issuer.yaml
 
 echo "Installing Rook Ceph..."
-(
-  cd rook-ceph
-  skaffold run
-)
+kubectl apply -f rook-ceph/crds.yaml
+kubectl wait --for=condition=Established \
+  crd/cephclusters.ceph.rook.io \
+  crd/cephblockpools.ceph.rook.io \
+  --timeout=2m
+kubectl apply -f rook-ceph/common.yaml
+kubectl apply -f rook-ceph/operator.yaml
 
 echo "Waiting for Rook Ceph operator to become Ready..."
 kubectl rollout status -n rook-ceph deployment/rook-ceph-operator --timeout=5m
 
+echo "Creating Rook Ceph cluster..."
+kubectl apply -f rook-ceph/cluster.yaml
+
 echo "Waiting for Ceph cluster to become Ready..."
 kubectl wait -n rook-ceph cephcluster/rook-ceph --for=condition=Ready --timeout=15m
+
+echo "Creating Rook Ceph block pool and StorageClass..."
+kubectl apply -f rook-ceph/pool-storageclass.yaml
 
 echo "Deploying Traefik (after Calico is ready)..."
 (

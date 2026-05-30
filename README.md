@@ -1,81 +1,125 @@
-# Local Kind Cluster Project
+# Kubernetes Cluster Development
 
-This project provides an easy way to set up a local Kubernetes cluster using Kind (Kubernetes in Docker). The setup includes Calico, Traefik, Polaris, and a local container registry. Deployment of resources is managed with Skaffold.
+A local Kubernetes platform lab built on [Kind](https://kind.sigs.k8s.io/). The repository provisions a development cluster with networking, ingress, TLS, storage, policy visibility, and optional tenant/multi-cluster workflows.
 
-## Features
-- Automated Kind cluster creation
-- Deploys Calico, Traefik, and Polaris
-- Includes a local container registry
-- Uses Skaffold for deployment automation
+The default cluster is intended for local experimentation, platform engineering demos, and validating Kubernetes add-ons before moving them into a shared environment.
+
+## Architecture
+
+```mermaid
+flowchart TB
+  workstation["Developer workstation"]
+  docker["Docker runtime"]
+
+  workstation --> docker
+
+  subgraph cluster["Kind cluster: test-cluster"]
+    api["Kubernetes API"]
+    registry["Local registry config<br/>localhost:5001"]
+    calico["Calico<br/>CNI + network policy"]
+    metallb["MetalLB<br/>LoadBalancer IPs"]
+    certmanager["cert-manager<br/>self-signed issuer"]
+    traefik["Traefik<br/>ingress controller"]
+    rook["Rook Ceph<br/>local block storage"]
+    polaris["Polaris<br/>configuration dashboard"]
+    tenants["Tenant namespaces<br/>quotas + demo apps"]
+  end
+
+  docker --> api
+  api --> registry
+  api --> calico
+  api --> metallb
+  api --> certmanager
+  api --> traefik
+  api --> rook
+  api --> polaris
+  api --> tenants
+
+  users["Local browser / curl"] --> traefik
+  traefik --> tenants
+  metallb --> traefik
+  certmanager --> traefik
+  rook --> tenants
+```
+
+## What This Installs
+
+| Component | Purpose | Installed by default |
+| --- | --- | --- |
+| Kind | Local Kubernetes cluster running in Docker | Yes |
+| Local registry config | Announces a development registry host at `localhost:5001` | Yes |
+| Calico | CNI and network policy support | Yes |
+| MetalLB | `LoadBalancer` IP allocation for local bare-metal style testing | Yes |
+| cert-manager | Local certificate automation with a self-signed `ClusterIssuer` | Yes |
+| Rook Ceph | Ephemeral local block storage via `rook-ceph-block` | Yes |
+| Traefik | Ingress controller | Yes |
+| Polaris | Kubernetes configuration dashboard | Yes |
+| Tenant manifests | Namespace, quota, and demo app workflow | Optional |
+| Multi-cluster Kind setup | One platform cluster and two tenant clusters | Optional |
+| Prometheus / OAuth manifests | Add-on manifests kept in the repo | Not installed by `start.sh` |
 
 ## Prerequisites
-Ensure you have the following tools installed before using this project:
-- [Helm](https://helm.sh/)
-- [Skaffold](https://skaffold.dev/)
-- [Kind](https://kind.sigs.k8s.io/)
-- [Docker](https://www.docker.com/)
 
-## Usage
-### Start the Cluster
-To create and deploy the Kind cluster, simply run:
+Install these tools before running the automation:
+
+- [Docker](https://www.docker.com/)
+- [Kind](https://kind.sigs.k8s.io/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Skaffold](https://skaffold.dev/)
+- [Helm](https://helm.sh/)
+
+Confirm the tools are available:
+
+```bash
+docker version
+kind version
+kubectl version --client
+skaffold version
+helm version
+```
+
+## Quick Start
+
+Create the local platform cluster and install the default add-ons:
+
 ```bash
 ./start.sh
 ```
-This will:
-1. Create a Kind cluster based on `Kind/cluster.yaml`.
-2. Deploy Calico, Traefik, and Polaris using Skaffold.
-3. Set up a local container registry.
 
-### Delete the Cluster
-To remove the cluster, run:
+The script performs the following high-level sequence:
+
+1. Creates the Kind cluster from `Kind/cluster.yaml`.
+2. Applies base Kind resources, including the local-registry discovery config.
+3. Installs Calico and waits for Calico pods to become ready.
+4. Installs MetalLB and applies `metallb/address-pool.yaml`.
+5. Installs cert-manager and applies the self-signed `ClusterIssuer`.
+6. Installs Rook Ceph in CRD-safe order, then creates the Ceph cluster and block pool.
+7. Installs Traefik and Polaris.
+
+Check the cluster:
+
+```bash
+kubectl get nodes
+kubectl get pods --all-namespaces
+kubectl get storageclass
+```
+
+## Delete the Cluster
+
+Remove the local Kind cluster:
+
 ```bash
 ./delete.sh
 ```
 
-To uninstall only Rook Ceph (without deleting the whole Kind cluster), run:
-```bash
-cd rook-ceph
-./uninstall.sh
-```
+`delete.sh` performs best-effort Rook Ceph cleanup before deleting the Kind cluster. The cleanup avoids deleting Rook custom resources through manifest files after their CRDs are gone, which prevents `no matches for kind "CephCluster"` errors during teardown.
 
-### Create Tenant Namespaces (Platform + Tenants)
-To create a platform namespace and two tenant namespaces with quotas/limits plus demo apps, run:
-```bash
-./tenants.sh
-```
+## Rook Ceph Storage
 
-This creates:
-- `platform-system` namespace (platform scope)
-- `tenant-a` and `tenant-b` namespaces (tenant scope)
-- ResourceQuota and LimitRange in each tenant namespace
-- Example apps and Ingress routes:
-  - `https://app.tenant-a.127.0.0.1.nip.io`
-  - `https://app.tenant-b.127.0.0.1.nip.io`
-
-### Note on Kind port mappings
-Changes to `Kind/cluster.yaml` (like `extraPortMappings`) only take effect after recreating the Kind cluster. Run `./delete.sh` and then `./start.sh` to apply new mappings.
-
-## Cluster Configuration
-The cluster consists of:
-- **Calico**: For networking and policy enforcement.
-- **Traefik**: As an ingress controller.
-- **Local Container Registry**:
-  ```yaml
-  kind: ConfigMap
-  metadata:
-    name: local-registry
-    namespace: kube-public
-  data:
-    local-registry: |
-      host: "localhost:5001"
-  ```
-- **Rook Ceph**: Distributed storage (local dev config).
-- **Polaris**: Kubernetes best-practices dashboard and policy checks.
-
-## Storage (Rook Ceph)
-Rook Ceph is installed for local, ephemeral storage. A `rook-ceph-block` StorageClass is created for PVCs.
+Rook Ceph is configured for local, ephemeral development storage. It creates the `rook-ceph-block` `StorageClass`.
 
 Example PVC:
+
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -90,134 +134,136 @@ spec:
   storageClassName: rook-ceph-block
 ```
 
-## Deployment Details
-The `start.sh` script executes the following steps:
+Uninstall only Rook Ceph without deleting the whole Kind cluster:
+
 ```bash
-echo "Creating Kind cluster..."
-kind create cluster --config=Kind/cluster.yaml || true
-
-echo "Cluster created successfully."
-
-echo "Deploying manifests with Skaffold..."
-
-cd Kind; skaffold run; cd ..;
-cd calico; skaffold run --filename skaffold-operator.yaml; cd ..;
-sleep 20
-cd calico; skaffold run --filename skaffold-resource.yaml; cd ..;
-
-cd traefik; skaffold run; cd ..;
-cd polaris; skaffold run; cd ..;
-
-echo "Skaffold deployment completed.";
+cd rook-ceph
+./uninstall.sh
 ```
 
-## Polaris Dashboard
-Polaris is installed in the `polaris` namespace.
+## Ingress and Local HTTPS
 
-To access the dashboard locally:
+Traefik is installed as the ingress controller. cert-manager installs a self-signed `ClusterIssuer` named `selfsigned` for local HTTPS testing.
+
+Useful checks:
+
 ```bash
-kubectl -n polaris port-forward svc/polaris-dashboard 8080:80
+kubectl get svc -n traefik
+kubectl get clusterissuer
+kubectl get certificate --all-namespaces
 ```
 
-Then open:
-```text
-http://localhost:8080
+When using self-signed certificates, test HTTPS endpoints with `curl -k`.
+
+```bash
+curl -k https://app.tenant-a.127.0.0.1.nip.io
 ```
 
-## Bare-Metal Exposure (Manual DNS)
-This repo uses MetalLB to provide a real `LoadBalancer` IP on bare-metal. Traefik is configured as a `LoadBalancer`, so you can map a real DNS name to Traefik and route traffic via Ingress.
+### macOS MetalLB Note
 
-### Example setup (manual DNS)
-1. Deploy the example app and ingress:
-   ```bash
-   kubectl apply -f manifests/example-app.yaml
-   kubectl apply -f manifests/example-ingress.yaml
-   ```
-2. Get the MetalLB IP for Traefik:
-   ```bash
-   kubectl get svc -n traefik
-   ```
-3. Use a dev wildcard domain (no DNS provider needed):
-   - `app.127.0.0.1.nip.io` → resolves to `127.0.0.1` automatically
-4. Test:
-   ```bash
-   curl http://app.127.0.0.1.nip.io
-   ```
+MetalLB allocates IPs from `172.18.255.200-172.18.255.250`. On macOS, these Docker network IPs are often not directly reachable from the host. If DNS resolves but requests hang, use a `kubectl port-forward`, Kind port mapping, or a localhost-based ingress path for local testing.
 
-If you want a different hostname, update `manifests/example-ingress.yaml`.
+## Tenant Workflow
 
-### macOS note (why MetalLB IP may hang)
-MetalLB assigns an IP that exists only inside Docker’s network, not on the macOS host. DNS can be correct and requests still hang because the host cannot route to that IP. Accessing services via `localhost` (port‑forward or port mapping) works because localhost is reachable from the host.
-In short: the issue is reachability to the Docker network IP, not DNS.
+The tenant helper applies platform and tenant namespace resources:
 
-## HTTPS (self-signed, local dev)
-This repo installs cert-manager and a self-signed ClusterIssuer for local HTTPS.
+```bash
+./tenants.sh
+```
 
-### Example HTTPS access
-1. Apply the example ingress (includes TLS):
-   ```bash
-   kubectl apply -f manifests/example-ingress.yaml
-   ```
-2. Wait for the certificate to be Ready:
-   ```bash
-   kubectl get certificate
-   ```
-3. Test (self-signed, use -k):
-   ```bash
-   curl -k https://app.127.0.0.1.nip.io
-   ```
+Expected tenant routes:
 
-## Multi-tenant DNS/LB patterns
-### Single cluster, multiple namespaces (shared Traefik)
-- One Traefik `LoadBalancer` service → one MetalLB IP.
-- Every tenant hostname points to the same IP.
-- Traefik routes by hostname/path to the correct namespace/service.
+- `https://app.tenant-a.127.0.0.1.nip.io`
+- `https://app.tenant-b.127.0.0.1.nip.io`
 
-Example:
-- `app.team1.example.com` → `<traefik-external-ip>`
-- `app.team2.example.com` → `<traefik-external-ip>`
+The script expects these manifests:
 
-### Multiple clusters (per-tenant clusters)
-- Each cluster has its own Traefik + MetalLB IP.
-- Each tenant domain points to its cluster’s unique IP.
+- `manifests/tenants.yaml`
+- `manifests/tenant-example-apps.yaml`
 
-Example:
-- `app.team1.example.com` → `<cluster1-traefik-ip>`
-- `app.team2.example.com` → `<cluster2-traefik-ip>`
+If those files are not present in your working tree, restore or recreate them before running `./tenants.sh`.
 
-## True Multi-Cluster Tenant Architecture (Kind)
-This repo includes automation to run one platform cluster and two tenant clusters locally.
+## Multi-Cluster Workflow
 
-### Create all clusters
+The `multi-cluster/` directory creates a local topology with one platform cluster and two tenant clusters.
+
+Create all clusters:
+
 ```bash
 ./multi-cluster/create.sh
 ```
 
-This creates:
-- `platform-cluster` (`kubectl` context: `kind-platform-cluster`)
-- `tenant-a-cluster` (`kubectl` context: `kind-tenant-a-cluster`)
-- `tenant-b-cluster` (`kubectl` context: `kind-tenant-b-cluster`)
+Created contexts:
 
-It also creates baseline namespaces:
-- `platform-system` in the platform cluster
-- `tenant-workloads` in each tenant cluster
+- `kind-platform-cluster`
+- `kind-tenant-a-cluster`
+- `kind-tenant-b-cluster`
 
-### Check status
+Check status:
+
 ```bash
 ./multi-cluster/status.sh
 ```
 
-### Delete all clusters
+Delete all multi-cluster resources:
+
 ```bash
 ./multi-cluster/delete.sh
 ```
 
-### Management cluster fronting tenant clusters
-- If Traefik only runs in the management cluster, it can only route to endpoints it can reach.
-- To front other clusters, you need cross-cluster networking, a service mesh, or external endpoints.
+This setup creates baseline namespaces only. To route traffic from a management cluster into tenant clusters, add cross-cluster networking, a service mesh, or explicit external endpoints.
 
-## Contributions
-Feel free to open issues or submit pull requests to improve this project.
+## Repository Layout
 
-## Argo CD
-Agrdo CD will be integrated in coming days in the project 
+| Path | Description |
+| --- | --- |
+| `Kind/` | Kind cluster config, CoreDNS config, and local-registry discovery resources |
+| `calico/` | Calico operator and custom resources |
+| `metallb/` | MetalLB installation and local address pool |
+| `cert-manager/` | cert-manager install and self-signed issuer |
+| `rook-ceph/` | Rook Ceph CRDs, operator, cluster, block pool, and uninstall script |
+| `traefik/` | Traefik Skaffold config and Helm values |
+| `polaris/` | Polaris Skaffold config and Helm values |
+| `prometheus/` | Prometheus add-on manifests |
+| `Oauth/` | OAuth add-on manifests |
+| `multi-cluster/` | Local platform and tenant Kind cluster automation |
+| `start.sh` | Creates the main local platform cluster |
+| `delete.sh` | Deletes the main local platform cluster |
+| `tenants.sh` | Applies tenant namespace and demo app manifests |
+
+## Troubleshooting
+
+### Rook CRD errors during cleanup
+
+If you see an error similar to:
+
+```text
+no matches for kind "CephCluster" in version "ceph.rook.io/v1"
+ensure CRDs are installed first
+```
+
+the cluster has Rook custom-resource manifests being evaluated after the Rook CRDs were removed. Use the current `delete.sh` or `rook-ceph/uninstall.sh`; both scripts check for CRDs before deleting Rook custom resources.
+
+### Calico pods never become ready
+
+Check the Calico namespace:
+
+```bash
+kubectl get pods -n calico-system
+kubectl describe pod -n calico-system <pod-name>
+```
+
+### Ingress host resolves but does not connect
+
+On macOS this is usually Docker network reachability, not DNS. Confirm the Traefik service IP and use port-forwarding if needed:
+
+```bash
+kubectl get svc -n traefik
+kubectl -n traefik port-forward svc/traefik 8080:80 8443:443
+```
+
+## Development Notes
+
+- Changes to `Kind/cluster.yaml`, including `extraPortMappings`, require recreating the Kind cluster.
+- The default Rook Ceph configuration is for local development and should not be treated as production storage.
+- `prometheus/` and `Oauth/` contain add-on manifests, but they are not part of the default `./start.sh` path.
