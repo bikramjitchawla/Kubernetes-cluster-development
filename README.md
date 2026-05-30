@@ -20,7 +20,7 @@ flowchart TB
     metallb["MetalLB<br/>LoadBalancer IPs"]
     certmanager["cert-manager<br/>self-signed issuer"]
     traefik["Traefik<br/>ingress controller"]
-    rook["Rook Ceph<br/>local block storage"]
+    rook["Rook Ceph<br/>optional CephFS storage"]
     polaris["Polaris<br/>configuration dashboard"]
     tenants["Tenant namespaces<br/>quotas + demo apps"]
   end
@@ -31,7 +31,7 @@ flowchart TB
   api --> metallb
   api --> certmanager
   api --> traefik
-  api --> rook
+  api -. optional .-> rook
   api --> polaris
   api --> tenants
 
@@ -51,7 +51,7 @@ flowchart TB
 | Calico | CNI and network policy support | Yes |
 | MetalLB | `LoadBalancer` IP allocation for local bare-metal style testing | Yes |
 | cert-manager | Local certificate automation with a self-signed `ClusterIssuer` | Yes |
-| Rook Ceph | Ephemeral local CephFS storage via `rook-ceph-filesystem` | Yes |
+| Rook Ceph | Ephemeral local CephFS storage via `rook-ceph-filesystem` | Optional |
 | Traefik | Ingress controller | Yes |
 | Polaris | Kubernetes configuration dashboard | Yes |
 | Tenant manifests | Namespace, quota, and demo app workflow | Optional |
@@ -93,8 +93,7 @@ The script performs the following high-level sequence:
 3. Installs Calico and waits for Calico pods to become ready.
 4. Installs MetalLB and applies `metallb/address-pool.yaml`.
 5. Installs cert-manager and applies the self-signed `ClusterIssuer`.
-6. Installs Rook Ceph in CRD-safe order, then creates the Ceph cluster, CephFS filesystem, and StorageClass.
-7. Installs Traefik and Polaris.
+6. Installs Traefik and Polaris.
 
 Check the cluster:
 
@@ -112,11 +111,18 @@ Remove the local Kind cluster:
 ./delete.sh
 ```
 
-`delete.sh` performs best-effort Rook Ceph cleanup before deleting the Kind cluster. The cleanup avoids deleting Rook custom resources through manifest files after their CRDs are gone, which prevents `no matches for kind "CephCluster"` errors during teardown.
+`delete.sh` also performs best-effort Rook Ceph cleanup if you installed the optional Rook add-on. The cleanup avoids deleting Rook custom resources through manifest files after their CRDs are gone, which prevents `no matches for kind "CephCluster"` errors during teardown.
 
 ## Rook Ceph Storage
 
-Rook Ceph is configured for local, ephemeral development storage. It creates the `rook-ceph-filesystem` `StorageClass`.
+Rook Ceph is optional and is not installed by `./start.sh`. Install it only when you need a Ceph-backed storage lab:
+
+```bash
+cd rook-ceph
+./install.sh
+```
+
+The standalone installer applies the Rook CRDs, operator, Ceph cluster, CephFS filesystem, and the `rook-ceph-filesystem` `StorageClass`.
 
 This repo uses CephFS by default because Docker Desktop's LinuxKit kernel does not include the `rbd` kernel module required by the RBD CSI node plugin. The CephFS CSI driver runs with the fuse client for better local compatibility.
 
@@ -223,7 +229,7 @@ This setup creates baseline namespaces only. To route traffic from a management 
 | `calico/` | Calico operator and custom resources |
 | `metallb/` | MetalLB installation and local address pool |
 | `cert-manager/` | cert-manager install and self-signed issuer |
-| `rook-ceph/` | Rook Ceph CRDs, operator, cluster, CephFS StorageClass, and uninstall script |
+| `rook-ceph/` | Optional Rook Ceph CRDs, operator, cluster, CephFS StorageClass, install script, and uninstall script |
 | `traefik/` | Traefik Skaffold config and Helm values |
 | `polaris/` | Polaris Skaffold config and Helm values |
 | `prometheus/` | Prometheus add-on manifests |
@@ -254,11 +260,12 @@ If `csi-rbdplugin` fails with:
 modprobe: FATAL: Module rbd not found in directory /lib/modules/...-linuxkit
 ```
 
-the host kernel does not provide the RBD module. The default manifests disable RBD CSI and use CephFS instead. Recreate the cluster after pulling these changes:
+the host kernel does not provide the RBD module. The optional Rook manifests disable RBD CSI and use CephFS instead. Recreate the Rook add-on after pulling these changes:
 
 ```bash
-./delete.sh
-./start.sh
+cd rook-ceph
+./uninstall.sh
+./install.sh
 ```
 
 ### Calico pods never become ready
@@ -282,5 +289,5 @@ kubectl -n traefik port-forward svc/traefik 8080:80 8443:443
 ## Development Notes
 
 - Changes to `Kind/cluster.yaml`, including `extraPortMappings`, require recreating the Kind cluster.
-- The default Rook Ceph configuration is for local development and should not be treated as production storage.
+- The optional Rook Ceph configuration is for local development and should not be treated as production storage.
 - `prometheus/` and `Oauth/` contain add-on manifests, but they are not part of the default `./start.sh` path.

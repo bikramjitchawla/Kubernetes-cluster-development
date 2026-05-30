@@ -29,6 +29,7 @@ spec:
               accessModes:
                 - ReadWriteOnce
               storageClassName: standard
+              volumeMode: Block
               resources:
                 requests:
                   storage: 10Gi
