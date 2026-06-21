@@ -1,6 +1,6 @@
 # Kubernetes Cluster Development
 
-A local Kubernetes platform lab built on [Kind](https://kind.sigs.k8s.io/). The repository provisions a development cluster with networking, ingress, TLS, storage, policy visibility, and optional tenant/multi-cluster workflows.
+A local Kubernetes platform lab built on [Kind](https://kind.sigs.k8s.io/). The repository provisions a development cluster with networking, ingress, TLS, storage, and policy visibility.
 
 The default cluster is intended for local experimentation, platform engineering demos, and validating Kubernetes add-ons before moving them into a shared environment.
 
@@ -22,7 +22,6 @@ flowchart TB
     traefik["Traefik<br/>ingress controller"]
     rook["Rook Ceph<br/>optional CephFS storage"]
     polaris["Polaris<br/>configuration dashboard"]
-    tenants["Tenant namespaces<br/>quotas + demo apps"]
   end
 
   docker --> api
@@ -33,13 +32,10 @@ flowchart TB
   api --> traefik
   api -. optional .-> rook
   api --> polaris
-  api --> tenants
 
   users["Local browser / curl"] --> traefik
-  traefik --> tenants
   metallb --> traefik
   certmanager --> traefik
-  rook --> tenants
 ```
 
 ## What This Installs
@@ -54,8 +50,6 @@ flowchart TB
 | Rook Ceph | Ephemeral local CephFS storage via `rook-ceph-filesystem` | Optional |
 | Traefik | Ingress controller | Yes |
 | Polaris | Kubernetes configuration dashboard | Yes |
-| Tenant manifests | Namespace, quota, and demo app workflow | Optional |
-| Multi-cluster Kind setup | One platform cluster and two tenant clusters | Optional |
 | Prometheus / OAuth manifests | Add-on manifests kept in the repo | Not installed by `start.sh` |
 
 ## Prerequisites
@@ -163,63 +157,24 @@ kubectl get certificate --all-namespaces
 
 When using self-signed certificates, test HTTPS endpoints with `curl -k`.
 
-```bash
-curl -k https://app.tenant-a.127.0.0.1.nip.io
-```
-
 ### macOS MetalLB Note
 
 MetalLB allocates IPs from `172.18.255.200-172.18.255.250`. On macOS, these Docker network IPs are often not directly reachable from the host. If DNS resolves but requests hang, use a `kubectl port-forward`, Kind port mapping, or a localhost-based ingress path for local testing.
 
 ## Tenant Workflow
 
-The tenant helper applies platform and tenant namespace resources:
+Tenant namespaces, guardrails, and tenant demo workloads are managed by Argo CD from:
 
-```bash
-./tenants.sh
+```text
+https://github.com/bikramjitchawla/Argo-CD-local-setup.git
 ```
 
-Expected tenant routes:
+This repo only bootstraps the shared local platform cluster. The Argo CD repo owns the namespace-based tenant model:
 
-- `https://app.tenant-a.127.0.0.1.nip.io`
-- `https://app.tenant-b.127.0.0.1.nip.io`
-
-The script expects these manifests:
-
-- `manifests/tenants.yaml`
-- `manifests/tenant-example-apps.yaml`
-
-If those files are not present in your working tree, restore or recreate them before running `./tenants.sh`.
-
-## Multi-Cluster Workflow
-
-The `multi-cluster/` directory creates a local topology with one platform cluster and two tenant clusters.
-
-Create all clusters:
-
-```bash
-./multi-cluster/create.sh
+```text
+platform/tenants/*
+apps/tenants/*
 ```
-
-Created contexts:
-
-- `kind-platform-cluster`
-- `kind-tenant-a-cluster`
-- `kind-tenant-b-cluster`
-
-Check status:
-
-```bash
-./multi-cluster/status.sh
-```
-
-Delete all multi-cluster resources:
-
-```bash
-./multi-cluster/delete.sh
-```
-
-This setup creates baseline namespaces only. To route traffic from a management cluster into tenant clusters, add cross-cluster networking, a service mesh, or explicit external endpoints.
 
 ## Repository Layout
 
@@ -234,10 +189,8 @@ This setup creates baseline namespaces only. To route traffic from a management 
 | `polaris/` | Polaris Skaffold config and Helm values |
 | `prometheus/` | Prometheus add-on manifests |
 | `Oauth/` | OAuth add-on manifests |
-| `multi-cluster/` | Local platform and tenant Kind cluster automation |
 | `start.sh` | Creates the main local platform cluster |
 | `delete.sh` | Deletes the main local platform cluster |
-| `tenants.sh` | Applies tenant namespace and demo app manifests |
 
 ## Troubleshooting
 
