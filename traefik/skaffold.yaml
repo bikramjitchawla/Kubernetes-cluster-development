@@ -9,4 +9,6 @@ deploy:
         repo: https://traefik.github.io/charts
         remoteChart: traefik
         version: 24.0.0
+        createNamespace: true
+        namespace: traefik
         valuesFiles: [values.yaml]

@@ -5,6 +5,8 @@ set -o pipefail
 
 REGISTRY_NAME="kind-registry"
 REGISTRY_PORT="5001"
+CALICO_READY_TIMEOUT="5m"
+METALLB_READY_TIMEOUT="5m"
 
 # ─── local registry ────────────────────────────────────────────────────────────
 # Must exist before the cluster so nodes can resolve it during image pulls.
@@ -77,9 +79,13 @@ echo "Waiting for Calico pods to appear..."
 for i in {1..20}; do
   pods=$(kubectl get pods -n calico-system --no-headers 2>/dev/null | wc -l)
   if [ "$pods" -gt 0 ]; then
-    echo "Calico pods detected. Waiting for them to be Ready..."
-    kubectl wait --for=condition=Ready pods --all -n calico-system --timeout=90s || {
+    echo "Calico pods detected. Waiting up to ${CALICO_READY_TIMEOUT} for them to be Ready..."
+    kubectl wait --for=condition=Ready pods --all -n calico-system --timeout="${CALICO_READY_TIMEOUT}" || {
       echo "Some Calico pods failed to become Ready in time."
+      exit 1
+    }
+    kubectl wait --for=condition=Available tigerastatus/calico --timeout="${CALICO_READY_TIMEOUT}" || {
+      echo "Calico did not report Available in time."
       exit 1
     }
     break
@@ -101,6 +107,10 @@ echo "Installing MetalLB..."
   cd metallb
   skaffold run
 )
+
+echo "Waiting for MetalLB to become Ready..."
+kubectl rollout status -n metallb-system deployment/controller --timeout="${METALLB_READY_TIMEOUT}"
+kubectl rollout status -n metallb-system daemonset/speaker --timeout="${METALLB_READY_TIMEOUT}"
 
 echo "Configuring MetalLB address pool..."
 kubectl apply -f metallb/address-pool.yaml
