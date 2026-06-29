@@ -4,6 +4,30 @@ A local Kubernetes platform lab built on [Kind](https://kind.sigs.k8s.io/). The 
 
 The default cluster is intended for local experimentation, platform engineering demos, and validating Kubernetes add-ons before moving them into a shared environment.
 
+This repo is the platform/bootstrap layer. The related GitOps layer is:
+
+```text
+https://github.com/bikramjitchawla/Argo-CD-local-setup.git
+```
+
+Use this repo to create the shared local cluster. Use `Argo-CD-local-setup` to install Argo CD, define tenant namespaces, and deploy tenant/app workloads.
+
+## End-to-End Flow
+
+```text
+Kubernetes-cluster-development
+  -> creates the shared Kind cluster
+  -> installs platform services like Calico, MetalLB, cert-manager, Traefik, Polaris
+
+Argo-CD-local-setup
+  -> installs Argo CD into that cluster
+  -> exposes Argo CD through Traefik
+  -> applies ApplicationSets
+
+Argo CD
+  -> syncs app workloads and tenant namespace configuration from Git
+```
+
 ## Architecture
 
 ```mermaid
@@ -97,6 +121,14 @@ kubectl get pods --all-namespaces
 kubectl get storageclass
 ```
 
+After the platform cluster is running, install the GitOps layer from the Argo CD repo:
+
+```bash
+git clone https://github.com/bikramjitchawla/Argo-CD-local-setup.git
+cd Argo-CD-local-setup
+./start.sh
+```
+
 ## Delete the Cluster
 
 Remove the local Kind cluster:
@@ -176,6 +208,28 @@ platform/tenants/*
 apps/tenants/*
 ```
 
+The intended tenant model is one shared cluster with tenant namespaces:
+
+```text
+test-cluster
+  tenant-a namespace
+  tenant-b namespace
+```
+
+Platform-owned tenant boundaries live in the Argo CD repo:
+
+```text
+platform/tenants/*
+```
+
+App-owned tenant workloads live in the Argo CD repo:
+
+```text
+apps/tenants/*
+```
+
+This repo intentionally does not create separate clusters per tenant.
+
 ## Repository Layout
 
 | Path | Description |
@@ -191,6 +245,17 @@ apps/tenants/*
 | `Oauth/` | OAuth add-on manifests |
 | `start.sh` | Creates the main local platform cluster |
 | `delete.sh` | Deletes the main local platform cluster |
+
+## Relationship to Argo-CD-local-setup
+
+This repo and `Argo-CD-local-setup` are meant to be used together:
+
+| Repo | Owns | Does not own |
+| --- | --- | --- |
+| `Kubernetes-cluster-development` | Shared Kind cluster, CNI, ingress, cert-manager, local load balancing, policy tooling | Tenant app delivery |
+| `Argo-CD-local-setup` | Argo CD install, ApplicationSets, tenant namespace boundaries, app workloads | Cluster creation and core platform bootstrap |
+
+Keep these ownership boundaries clear to avoid double-managing the same resource from both Skaffold/local scripts and Argo CD.
 
 ## Troubleshooting
 
@@ -244,3 +309,4 @@ kubectl -n traefik port-forward svc/traefik 8080:80 8443:443
 - Changes to `Kind/cluster.yaml`, including `extraPortMappings`, require recreating the Kind cluster.
 - The optional Rook Ceph configuration is for local development and should not be treated as production storage.
 - `prometheus/` and `Oauth/` contain add-on manifests, but they are not part of the default `./start.sh` path.
+- Tenant namespace and workload changes should be made in `Argo-CD-local-setup`, committed, and pushed so Argo CD can sync them.

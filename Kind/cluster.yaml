@@ -15,17 +15,26 @@ nodes:
           kubeletExtraArgs:
             node-labels: "ingress-ready=true"
     extraPortMappings:
-      - containerPort: 32080 
+      - containerPort: 32080
         hostPort: 80
-      - containerPort: 32443 
+      - containerPort: 32443
         hostPort: 443
       - containerPort: 30432
         hostPort: 5432
+    extraMounts:
+      - hostPath: Kind/registry/certs.d
+        containerPath: /etc/containerd/certs.d
 
   - role: worker
     image: kindest/node:v1.34.0
+    extraMounts:
+      - hostPath: Kind/registry/certs.d
+        containerPath: /etc/containerd/certs.d
   - role: worker
     image: kindest/node:v1.34.0
+    extraMounts:
+      - hostPath: Kind/registry/certs.d
+        containerPath: /etc/containerd/certs.d
 networking:
   podSubnet: 172.16.0.0/16
   disableDefaultCNI: true  # Required to disable Kind’s built-in CNI so we can install Calico

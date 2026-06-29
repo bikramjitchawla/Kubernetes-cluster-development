@@ -41,3 +41,7 @@ fi
 echo "Deleting Kind cluster '$CLUSTER_NAME'..."
 kind delete cluster --name "$CLUSTER_NAME" || true
 echo "Kind cluster '$CLUSTER_NAME' deleted."
+
+echo "Removing local registry..."
+docker rm -f kind-registry 2>/dev/null || true
+echo "Local registry removed."
